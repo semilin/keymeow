@@ -11,6 +11,7 @@ checksum = "453ad9f582a441959e5f0d088b02ce04cfe8d51a8eaf077f12ac6d3e94164ca6"
 [[package]]
 name = "keycat"
 version = "0.1.0"
+source = "git+https://github.com/semilin/keycat#02ec4cd0b5dafc259dfca6a7648f642d580647ff"
 
 [[package]]
 name = "keymeow"
