@@ -6,6 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-keycat = { git = "https://github.com/semilin/keycat" }
+kc = { package = "keycat", git = "https://github.com/semilin/keycat", features = ["serde"] }
 serde = { version = "1.0.164", features = ["derive"] }
 serde_json = "1.0.97"
