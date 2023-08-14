@@ -1,6 +1,6 @@
 use std::ops::{Index, IndexMut};
 use serde::{Serialize, Deserialize};
-use kc::{self, NgramType};
+use kc::{self, NgramType, Analyzer, Corpus, CorpusChar};
 
 pub enum Hand {
     Left, Right
@@ -118,6 +118,44 @@ impl MetricContext{
             metrics: md.metrics,
             keyboard: md.keyboard
         }
+    }
+    pub fn analyzer<'a>(&'a self, corpus: &'a Corpus, l: &'a LayoutData) -> Analyzer<'a> {
+        let mut mapped_layout: FingerMap<Vec<char>> = FingerMap::default();
+        for component in &l.components {
+            match component {
+                LayoutComponent::Key(comp) => {
+                    if comp.finger.len() == 1 {
+                        let finger = comp.finger[0];
+                        for (i, c) in comp.keys.iter().enumerate() {
+                            if i < self.keyboard.keys[finger].len() {
+                                mapped_layout[finger].push(*c)
+                            }
+                        }
+                        continue;
+                    }
+                    for finger in &comp.finger {
+                        let l_len = mapped_layout[*finger].len();
+                        let k_len = self.keyboard.keys[*finger].len();
+                        // println!("{} {}", l_len, k_len);
+                        if l_len < k_len {
+                            mapped_layout[*finger].push(comp.keys[0]);
+                            break;
+                        }
+                    }
+                },
+	        // chord support will be added later
+                _ => todo!()
+            }
+        }
+
+        let matrix: Vec<CorpusChar> = mapped_layout.map
+	    .iter()
+            .flatten()
+	    .map(|c| *corpus.corpus_char(*c).unwrap())
+	    .collect();
+
+        let layout = kc::Layout { matrix };
+        Analyzer::from(&self.metric_data, &corpus, layout)
     }
 }
 
