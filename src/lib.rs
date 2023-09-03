@@ -50,14 +50,14 @@ pub struct KeyCoord {
     finger: Finger,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum LayoutComponent {
     Key(KeyComponent),
     Chord(ChordComponent)
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct KeyComponent {
     /// Vector describing the list of possible fingers the keys should
     /// be long to.
@@ -68,13 +68,13 @@ pub struct KeyComponent {
     pub keys: Vec<char>
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ChordComponent {
     pub keys: Vec<char>,
     pub output: char,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct LayoutData {
     pub name: String,
     pub authors: Vec<String>,
