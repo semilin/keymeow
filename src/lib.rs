@@ -1,37 +1,50 @@
+use kc::{self, Analyzer, Corpus, CorpusChar, NgramType};
+use serde::{Deserialize, Serialize};
 use std::ops::{Index, IndexMut};
-use serde::{Serialize, Deserialize};
-use kc::{self, NgramType, Analyzer, Corpus, CorpusChar};
 
 pub enum Hand {
-    Left, Right
+    Left,
+    Right,
 }
 
 #[derive(Copy, Clone, Serialize, Deserialize, Debug)]
 pub enum Finger {
-    LP, LR, LM, LI, LT,
-    RT, RI, RM, RR, RP,
+    LP,
+    LR,
+    LM,
+    LI,
+    LT,
+    RT,
+    RI,
+    RM,
+    RR,
+    RP,
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum FingerKind {
-    Pinky, Ring, Middle, Index, Thumb
+    Pinky,
+    Ring,
+    Middle,
+    Index,
+    Thumb,
 }
 
 impl Finger {
     pub fn hand(self) -> Hand {
-	match self {
-	    Finger::LP | Finger::LR | Finger::LM | Finger::LI | Finger::LT => Hand::Left,
-	    Finger::RP | Finger::RM | Finger::RR | Finger::RI | Finger::RT => Hand::Right,
-	}
+        match self {
+            Finger::LP | Finger::LR | Finger::LM | Finger::LI | Finger::LT => Hand::Left,
+            Finger::RP | Finger::RM | Finger::RR | Finger::RI | Finger::RT => Hand::Right,
+        }
     }
     pub fn kind(self) -> FingerKind {
-	match self {
-	    Finger::LT | Finger::RT => FingerKind::Thumb,
-	    Finger::LI | Finger::RI => FingerKind::Index,
-	    Finger::LM | Finger::RM => FingerKind::Middle,
-	    Finger::LR | Finger::RR => FingerKind::Ring,
-	    Finger::LP | Finger::RP => FingerKind::Pinky,
-	}
+        match self {
+            Finger::LT | Finger::RT => FingerKind::Thumb,
+            Finger::LI | Finger::RI => FingerKind::Index,
+            Finger::LM | Finger::RM => FingerKind::Middle,
+            Finger::LR | Finger::RR => FingerKind::Ring,
+            Finger::LP | Finger::RP => FingerKind::Pinky,
+        }
     }
 }
 
@@ -54,7 +67,7 @@ pub struct KeyCoord {
 #[serde(untagged)]
 pub enum LayoutComponent {
     Key(KeyComponent),
-    Chord(ChordComponent)
+    Chord(ChordComponent),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -65,7 +78,7 @@ pub struct KeyComponent {
     /// Layer that the keys occupy.
     pub layer: u8,
     /// List of characters.
-    pub keys: Vec<char>
+    pub keys: Vec<char>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -79,44 +92,44 @@ pub struct LayoutData {
     pub name: String,
     pub authors: Vec<String>,
     pub note: Option<String>,
-    pub components: Vec<LayoutComponent>
+    pub components: Vec<LayoutComponent>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Keyboard {
-    pub keys: FingerMap<Vec<KeyCoord>>
+    pub keys: FingerMap<Vec<KeyCoord>>,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct Metric {
     pub name: String,
     pub short: String,
-    pub ngram_type: NgramType
+    pub ngram_type: NgramType,
 }
 
 #[derive(Deserialize)]
 pub struct MetricData {
     pub metrics: Vec<Metric>,
     pub strokes: Vec<kc::NstrokeData>,
-    pub keyboard: Keyboard
+    pub keyboard: Keyboard,
 }
 
 pub struct MetricContext {
     pub metric_data: kc::MetricData,
     pub metrics: Vec<Metric>,
-    pub keyboard: Keyboard
+    pub keyboard: Keyboard,
 }
 
-impl MetricContext{
+impl MetricContext {
     pub fn from(md: MetricData) -> Self {
         Self {
-            metric_data: kc::MetricData::from(md.metrics.iter()
-					      .map(|x| x.ngram_type)
-					      .collect(),
-					      md.strokes,
-					      md.keyboard.keys.map.iter().flatten().count()),
+            metric_data: kc::MetricData::from(
+                md.metrics.iter().map(|x| x.ngram_type).collect(),
+                md.strokes,
+                md.keyboard.keys.map.iter().flatten().count(),
+            ),
             metrics: md.metrics,
-            keyboard: md.keyboard
+            keyboard: md.keyboard,
         }
     }
     pub fn analyzer<'a>(&'a self, corpus: &'a Corpus, l: &'a LayoutData) -> Analyzer<'a> {
@@ -142,17 +155,18 @@ impl MetricContext{
                             break;
                         }
                     }
-                },
-	        // chord support will be added later
-                _ => todo!()
+                }
+                // chord support will be added later
+                _ => todo!(),
             }
         }
 
-        let matrix: Vec<CorpusChar> = mapped_layout.map
-	    .iter()
+        let matrix: Vec<CorpusChar> = mapped_layout
+            .map
+            .iter()
             .flatten()
-	    .map(|c| *corpus.corpus_char(*c).unwrap())
-	    .collect();
+            .map(|c| *corpus.corpus_char(*c).unwrap())
+            .collect();
 
         let layout = kc::Layout { matrix };
         Analyzer::from(&self.metric_data, &corpus, layout)
@@ -161,12 +175,12 @@ impl MetricContext{
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct FingerMap<T> {
-    pub map: [T; 10]
+    pub map: [T; 10],
 }
 
 impl<T> Index<Finger> for FingerMap<T> {
     type Output = T;
-    
+
     fn index(&self, finger: Finger) -> &Self::Output {
         match finger {
             Finger::LP => &self.map[0],
