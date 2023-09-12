@@ -29,7 +29,7 @@ pub fn main() {
     let mc = MetricContext::new(&semimak, md, corpus);
 
     for (i, stat) in mc.analyzer.stats.iter().enumerate() {
-        let pw = 5.0 * stat / mc.analyzer.layout.total_char_count(&mc.analyzer.corpus) as f32;
+        let pw = 5.0 * stat / mc.analyzer.layouts[0].total_char_count(&mc.analyzer.corpus) as f32;
         println!(
             "{}: {:.3}/w | every {:.2} words",
             mc.metrics[i].short,

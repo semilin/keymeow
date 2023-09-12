@@ -161,8 +161,11 @@ impl MetricContext {
     }
 
     pub fn set_layout(&mut self, l: &LayoutData) {
-        self.analyzer.layout =
-            MetricContext::layout_matrix(l, &self.keyboard, &self.analyzer.corpus);
+        self.analyzer.layouts = vec![MetricContext::layout_matrix(
+            l,
+            &self.keyboard,
+            &self.analyzer.corpus,
+        )];
     }
 
     pub fn new(l: &LayoutData, md: MetricData, corpus: Corpus) -> Self {
