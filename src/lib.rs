@@ -115,24 +115,13 @@ pub struct MetricData {
 }
 
 pub struct MetricContext {
-    pub metric_data: kc::MetricData,
     pub metrics: Vec<Metric>,
     pub keyboard: Keyboard,
+    pub analyzer: Analyzer,
 }
 
 impl MetricContext {
-    pub fn from(md: MetricData) -> Self {
-        Self {
-            metric_data: kc::MetricData::from(
-                md.metrics.iter().map(|x| x.ngram_type).collect(),
-                md.strokes,
-                md.keyboard.keys.map.iter().flatten().count(),
-            ),
-            metrics: md.metrics,
-            keyboard: md.keyboard,
-        }
-    }
-    pub fn analyzer<'a>(&'a self, corpus: &'a Corpus, l: &'a LayoutData) -> Analyzer<'a> {
+    pub fn layout_matrix(l: &LayoutData, kb: &Keyboard, corpus: &Corpus) -> kc::Layout {
         let mut mapped_layout: FingerMap<Vec<char>> = FingerMap::default();
         for component in &l.components {
             match component {
@@ -140,7 +129,7 @@ impl MetricContext {
                     if comp.finger.len() == 1 {
                         let finger = comp.finger[0];
                         for (i, c) in comp.keys.iter().enumerate() {
-                            if i < self.keyboard.keys[finger].len() {
+                            if i < kb.keys[finger].len() {
                                 mapped_layout[finger].push(*c)
                             }
                         }
@@ -148,7 +137,7 @@ impl MetricContext {
                     }
                     for finger in &comp.finger {
                         let l_len = mapped_layout[*finger].len();
-                        let k_len = self.keyboard.keys[*finger].len();
+                        let k_len = kb.keys[*finger].len();
                         // println!("{} {}", l_len, k_len);
                         if l_len < k_len {
                             mapped_layout[*finger].push(comp.keys[0]);
@@ -168,8 +157,28 @@ impl MetricContext {
             .map(|c| *corpus.corpus_char(*c).unwrap())
             .collect();
 
-        let layout = kc::Layout { matrix };
-        Analyzer::from(&self.metric_data, &corpus, layout)
+        kc::Layout { matrix }
+    }
+
+    pub fn set_layout(&mut self, l: &LayoutData) {
+        self.analyzer.layout =
+            MetricContext::layout_matrix(l, &self.keyboard, &self.analyzer.corpus);
+    }
+
+    pub fn new(l: &LayoutData, md: MetricData, corpus: Corpus) -> Self {
+        let layout = MetricContext::layout_matrix(l, &md.keyboard, &corpus);
+        let metric_data = kc::MetricData::from(
+            md.metrics.iter().map(|m| m.ngram_type).collect(),
+            md.strokes,
+            layout.matrix.len(),
+        );
+        let analyzer = Analyzer::from(metric_data, corpus, layout);
+
+        Self {
+            metrics: md.metrics,
+            keyboard: md.keyboard,
+            analyzer,
+        }
     }
 }
 
