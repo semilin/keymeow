@@ -7,7 +7,7 @@ pub enum Hand {
     Right,
 }
 
-#[derive(Copy, Clone, Serialize, Deserialize, Debug)]
+#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub enum Finger {
     LP,
     LR,
@@ -50,17 +50,17 @@ impl Finger {
 
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
 pub struct Pos {
-    col: u8,
-    row: u8,
-    layer: u8,
+    pub col: u8,
+    pub row: u8,
+    pub layer: u8,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct KeyCoord {
-    pos: Pos,
-    x: f32,
-    y: f32,
-    finger: Finger,
+    pub pos: Pos,
+    pub x: f32,
+    pub y: f32,
+    pub finger: Finger,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
