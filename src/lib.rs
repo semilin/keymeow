@@ -121,7 +121,7 @@ pub struct MetricContext {
 }
 
 impl MetricContext {
-    pub fn layout_matrix(l: &LayoutData, kb: &Keyboard, corpus: &Corpus) -> kc::Layout {
+    pub fn layout_matrix(l: &LayoutData, kb: &Keyboard, corpus: &Corpus) -> Option<kc::Layout> {
         let mut mapped_layout: FingerMap<Vec<char>> = FingerMap::default();
         for component in &l.components {
             match component {
@@ -130,8 +130,8 @@ impl MetricContext {
                         let finger = comp.finger[0];
                         for (i, c) in comp.keys.iter().enumerate() {
                             if i < kb.keys[finger].len() {
-                                mapped_layout[finger].push(*c)
-                            }
+                                mapped_layout[finger].push(*c);
+			    }
                         }
                         continue;
                     }
@@ -157,19 +157,24 @@ impl MetricContext {
             .map(|c| *corpus.corpus_char(*c).unwrap())
             .collect();
 
-        kc::Layout { matrix }
+        if matrix.len() == kb.keys.map.iter().flatten().count() {
+            Some(kc::Layout { matrix })
+        } else {
+            None
+        }
     }
 
-    pub fn set_layout(&mut self, l: &LayoutData) {
+    pub fn set_layout(&mut self, l: &LayoutData) -> Option<()> {
         self.analyzer.layouts = vec![MetricContext::layout_matrix(
             l,
             &self.keyboard,
             &self.analyzer.corpus,
-        )];
+        )?];
+        Some(())
     }
 
-    pub fn new(l: &LayoutData, md: MetricData, corpus: Corpus) -> Self {
-        let layout = MetricContext::layout_matrix(l, &md.keyboard, &corpus);
+    pub fn new(l: &LayoutData, md: MetricData, corpus: Corpus) -> Option<Self> {
+        let layout = MetricContext::layout_matrix(l, &md.keyboard, &corpus)?;
         let metric_data = kc::MetricData::from(
             md.metrics.iter().map(|m| m.ngram_type).collect(),
             md.strokes,
@@ -177,11 +182,11 @@ impl MetricContext {
         );
         let analyzer = Analyzer::from(metric_data, corpus, layout);
 
-        Self {
+        Some(Self {
             metrics: md.metrics,
             keyboard: md.keyboard,
             analyzer,
-        }
+        })
     }
 }
 

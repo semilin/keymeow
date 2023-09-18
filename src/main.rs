@@ -25,8 +25,9 @@ pub fn main() {
 
     corpus.add_file("tr.txt").unwrap();
 
-    let md: MetricData = serde_json::from_str(&fs::read_to_string("matrix.json").unwrap()).unwrap();
-    let mc = MetricContext::new(&semimak, md, corpus);
+    let md: MetricData =
+        serde_json::from_str(&fs::read_to_string("ansi-angle.json").unwrap()).unwrap();
+    let mc = MetricContext::new(&semimak, md, corpus).unwrap();
 
     for (i, stat) in mc.analyzer.stats.iter().enumerate() {
         let pw = 5.0 * stat / mc.analyzer.layouts[0].total_char_count(&mc.analyzer.corpus) as f32;
