@@ -136,7 +136,7 @@ impl MetricContext {
 			    }
 			    for (j, combo) in kb.combos.iter().enumerate() {
 				if mapped_combos[j] == '\0' && combo.coords.iter().any(|c| c.finger == finger) {
-				    mapped_combos[j] = comp.keys[0];
+				    mapped_combos[j] = *c;
 				}
 			    }
                         }
