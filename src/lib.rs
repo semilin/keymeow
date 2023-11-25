@@ -169,7 +169,7 @@ impl MetricContext {
             .iter()
             .flatten()
 	    .chain(mapped_combos.iter())
-            .map(|c| *corpus.corpus_char(*c).unwrap())
+            .map(|c| *corpus.corpus_char(*c))
             .collect();
 
 	println!("{:?}", matrix);
