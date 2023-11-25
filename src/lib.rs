@@ -64,10 +64,14 @@ pub struct KeyCoord {
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct Combo {
+    pub coords: Vec<KeyCoord>
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum LayoutComponent {
     Key(KeyComponent),
-    Chord(ChordComponent),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -82,12 +86,6 @@ pub struct KeyComponent {
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct ChordComponent {
-    pub keys: Vec<char>,
-    pub output: char,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct LayoutData {
     pub name: String,
     pub authors: Vec<String>,
@@ -98,6 +96,8 @@ pub struct LayoutData {
 #[derive(Serialize, Deserialize)]
 pub struct Keyboard {
     pub keys: FingerMap<Vec<KeyCoord>>,
+    #[serde(default)]
+    pub combos: Vec<Combo>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -123,6 +123,7 @@ pub struct MetricContext {
 impl MetricContext {
     pub fn layout_matrix(l: &LayoutData, kb: &Keyboard, corpus: &Corpus) -> Option<kc::Layout> {
         let mut mapped_layout: FingerMap<Vec<char>> = FingerMap::default();
+	let mut mapped_combos: Vec<char> = vec!['\0'; kb.combos.len()];
         for component in &l.components {
             match component {
                 LayoutComponent::Key(comp) => {
@@ -131,6 +132,12 @@ impl MetricContext {
                         for (i, c) in comp.keys.iter().enumerate() {
                             if i < kb.keys[finger].len() {
                                 mapped_layout[finger].push(*c);
+				continue
+			    }
+			    for (j, combo) in kb.combos.iter().enumerate() {
+				if mapped_combos[j] == '\0' && combo.coords.iter().any(|c| c.finger == finger) {
+				    mapped_combos[j] = comp.keys[0];
+				}
 			    }
                         }
                         continue;
@@ -143,22 +150,33 @@ impl MetricContext {
                             mapped_layout[*finger].push(comp.keys[0]);
                             break;
                         }
-                    }
+			for (i, combo) in kb.combos.iter().enumerate() {
+			    if mapped_combos[i] == '\0' && combo.coords.iter().any(|c| c.finger == *finger) {
+				mapped_combos[i] = comp.keys[0];
+				break;
+			    }
+			}
+		    }
                 }
-                // chord support will be added later
-                _ => todo!(),
-            }
+	    }
         }
+
+	let kb_size = kb.keys.map.iter().flatten().count() + kb.combos.len();
+	println!("{:?}", mapped_combos);
 
         let matrix: Vec<CorpusChar> = mapped_layout
             .map
             .iter()
             .flatten()
+	    .chain(mapped_combos.iter())
             .map(|c| *corpus.corpus_char(*c).unwrap())
             .collect();
 
-        if matrix.len() == kb.keys.map.iter().flatten().count() {
-            Some(kc::Layout { matrix })
+	println!("{:?}", matrix);
+
+	if matrix.len() == kb_size {
+	    println!("{:?}", matrix);
+	    Some(kc::Layout { matrix })
         } else {
             None
         }
