@@ -124,6 +124,7 @@ impl MetricContext {
     pub fn layout_matrix(l: &LayoutData, kb: &Keyboard, corpus: &Corpus) -> Option<kc::Layout> {
         let mut mapped_layout: FingerMap<Vec<char>> = FingerMap::default();
 	let mut mapped_combos: Vec<char> = vec!['\0'; kb.combos.len()];
+	let mut matrix_size = 0;
         for component in &l.components {
             match component {
                 LayoutComponent::Key(comp) => {
@@ -132,6 +133,7 @@ impl MetricContext {
                         for (i, c) in comp.keys.iter().enumerate() {
                             if i < kb.keys[finger].len() {
                                 mapped_layout[finger].push(*c);
+				matrix_size += 1;
 				continue
 			    }
 			    for (j, combo) in kb.combos.iter().enumerate() {
@@ -148,6 +150,7 @@ impl MetricContext {
                         // println!("{} {}", l_len, k_len);
                         if l_len < k_len {
                             mapped_layout[*finger].push(comp.keys[0]);
+			    matrix_size += 1;
                             break;
                         }
 			for (i, combo) in kb.combos.iter().enumerate() {
@@ -161,20 +164,21 @@ impl MetricContext {
 	    }
         }
 
-	let kb_size = kb.keys.map.iter().flatten().count() + kb.combos.len();
+	let kb_size = kb.keys.map.iter().flatten().count();
 	println!("{:?}", mapped_combos);
 
         let matrix: Vec<CorpusChar> = mapped_layout
             .map
             .iter()
             .flatten()
+	    .chain(std::iter::repeat(&'\0').take(kb_size - matrix_size))
 	    .chain(mapped_combos.iter())
             .map(|c| *corpus.corpus_char(*c))
             .collect();
 
 	println!("{:?}", matrix);
 
-	if matrix.len() == kb_size {
+	if matrix.len() == kb_size + kb.combos.len() {
 	    println!("{:?}", matrix);
 	    Some(kc::Layout { matrix })
         } else {
