@@ -104,16 +104,24 @@ pub struct Keyboard {
 
 impl Keyboard {
     pub fn process_combo_indexes(&mut self) {
-        self.combo_indexes = self.combos.iter().map(|combo| {
-            combo.coords.iter().map(|a| {
-                self.keys
-                    .map
+        self.combo_indexes = self
+            .combos
+            .iter()
+            .map(|combo| {
+                combo
+                    .coords
                     .iter()
-                    .flatten()
-                    .position(|b| a.pos.row == b.pos.row && a.pos.col == b.pos.col)
-		    .expect("combo must use positions on layout")
-            }).collect()
-        }).collect();
+                    .map(|a| {
+                        self.keys
+                            .map
+                            .iter()
+                            .flatten()
+                            .position(|b| a.pos.row == b.pos.row && a.pos.col == b.pos.col)
+                            .expect("combo must use positions on layout")
+                    })
+                    .collect()
+            })
+            .collect();
     }
 }
 
