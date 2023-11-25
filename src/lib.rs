@@ -164,6 +164,7 @@ impl MetricContext {
                                     && combo.coords.iter().any(|c| c.finger == finger)
                                 {
                                     mapped_combos[j] = *c;
+				    break;
                                 }
                             }
                         }
