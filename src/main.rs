@@ -29,6 +29,7 @@ pub fn main() {
     let md: MetricData =
         serde_json::from_str(&fs::read_to_string("combo_test.json").unwrap()).unwrap();
     let mut mc = MetricContext::new(&semimak, md, corpus).unwrap();
+    mc.keyboard.process_combo_indexes();
 
     // let mut rng = rand::thread_rng();
 
