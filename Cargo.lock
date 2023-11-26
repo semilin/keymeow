@@ -28,7 +28,7 @@ checksum = "af150ab688ff2122fcef229be89cb50dd66af9e01a4ff320cc137eecc9bacc38"
 [[package]]
 name = "keycat"
 version = "0.1.0"
-source = "git+https://github.com/semilin/keycat#93de005dc8adb2d837c6cf1896cdb581cbcd7f34"
+source = "git+https://github.com/semilin/keycat#13a9ea46be9ff50022b64a8f6515c2018c86e33a"
 dependencies = [
  "serde",
 ]
@@ -57,9 +57,9 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.69"
+version = "1.0.70"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "134c189feb4956b20f6f547d2cf727d4c0fe06722b20a0eec87ed445a97f92da"
+checksum = "39278fbbf5fb4f646ce651690877f89d1c5811a3d4acb27700c1cb3cdb78fd3b"
 dependencies = [
  "unicode-ident",
 ]
