@@ -1,4 +1,4 @@
-use kc::{self, Analyzer, Corpus, CorpusChar, NgramType};
+use kc::{self, Analyzer, Corpus, CorpusChar, Layout, NgramType};
 use serde::{Deserialize, Serialize};
 use std::ops::{Index, IndexMut};
 
@@ -143,6 +143,7 @@ pub struct MetricContext {
     pub metrics: Vec<Metric>,
     pub keyboard: Keyboard,
     pub analyzer: Analyzer,
+    pub layout: Layout,
 }
 
 impl MetricContext {
@@ -164,7 +165,7 @@ impl MetricContext {
                                     && combo.coords.iter().any(|c| c.finger == finger)
                                 {
                                     mapped_combos[j] = *c;
-				    break;
+                                    break;
                                 }
                             }
                         }
@@ -217,11 +218,7 @@ impl MetricContext {
     }
 
     pub fn set_layout(&mut self, l: &LayoutData) -> Option<()> {
-        self.analyzer.layouts = vec![MetricContext::layout_matrix(
-            l,
-            &self.keyboard,
-            &self.analyzer.corpus,
-        )?];
+        self.layout = MetricContext::layout_matrix(l, &self.keyboard, &self.analyzer.corpus)?;
         Some(())
     }
 
@@ -232,11 +229,12 @@ impl MetricContext {
             md.strokes,
             layout.matrix.len(),
         );
-        let analyzer = Analyzer::from(metric_data, corpus, layout);
+        let analyzer = Analyzer::from(metric_data, corpus);
 
         Some(Self {
             metrics: md.metrics,
             keyboard: md.keyboard,
+            layout,
             analyzer,
         })
     }

@@ -41,13 +41,15 @@ pub fn main() {
 
     // println!("{:?}", mc.analyzer.layouts[0].matrix.iter().map(|x| mc.analyzer.corpus.uncorpus_unigram(*x)).collect::<String>());
 
-    let old: Vec<_> = mc.analyzer.stats.iter().cloned().enumerate().collect();
+    let oldstats: Vec<_> = mc.analyzer.calc_stats(vec![0.0; mc.analyzer.data.metrics.len()], &mc.layout);
 
-    mc.analyzer.swap(0, &Swap::new(21, 23), false);
+    mc.layout.swap(&Swap::new(21, 23));
 
-    for (i, stat) in mc.analyzer.stats.iter().enumerate() {
-        let newp = stat / mc.analyzer.layouts[0].total_char_count(&mc.analyzer.corpus) as f32;
-	let oldp = old[i].1 / mc.analyzer.layouts[0].total_char_count(&mc.analyzer.corpus) as f32;
+    let newstats: Vec<_> = mc.analyzer.calc_stats(vec![0.0; mc.analyzer.data.metrics.len()], &mc.layout);
+
+    for (i, stat) in newstats.iter().enumerate() {
+        let newp = stat / mc.layout.total_char_count(&mc.analyzer.corpus) as f32;
+	let oldp = oldstats[i] / mc.layout.total_char_count(&mc.analyzer.corpus) as f32;
         println!(
             "{}: 1/{:.1} -> 1/{:.1}",
             mc.metrics[i].short,
