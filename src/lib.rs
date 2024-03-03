@@ -174,7 +174,7 @@ impl MetricContext {
                     for finger in &comp.finger {
                         let l_len = mapped_layout[*finger].len();
                         let k_len = kb.keys[*finger].len();
-                        // println!("{} {}", l_len, k_len);
+
                         if l_len < k_len {
                             mapped_layout[*finger].push(comp.keys[0]);
                             break;
@@ -197,7 +197,6 @@ impl MetricContext {
         }
 
         let kb_size = kb.keys.map.iter().flatten().count();
-        println!("{:?}", mapped_combos);
 
         let matrix: Vec<CorpusChar> = mapped_layout
             .map
@@ -207,10 +206,7 @@ impl MetricContext {
             .map(|c| *corpus.corpus_char(*c))
             .collect();
 
-        println!("{:?}", matrix);
-
         if matrix.len() == kb_size + kb.combos.len() {
-            println!("{:?}", matrix);
             Some(kc::Layout { matrix })
         } else {
             None
