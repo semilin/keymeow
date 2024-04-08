@@ -1,4 +1,8 @@
-use kc::{self, Analyzer, Corpus, CorpusChar, Layout, NgramType};
+use kc::{
+    self,
+    analysis::{Analyzer, MetricData as KcMetricData, NstrokeData},
+    Corpus, CorpusChar, Layout, NgramType,
+};
 use serde::{Deserialize, Serialize};
 use std::ops::{Index, IndexMut};
 
@@ -135,7 +139,7 @@ pub struct Metric {
 #[derive(Deserialize)]
 pub struct MetricData {
     pub metrics: Vec<Metric>,
-    pub strokes: Vec<kc::NstrokeData>,
+    pub strokes: Vec<NstrokeData>,
     pub keyboard: Keyboard,
 }
 
@@ -203,7 +207,7 @@ impl MetricContext {
             .iter()
             .flatten()
             .chain(mapped_combos.iter())
-            .map(|c| *corpus.corpus_char(*c))
+            .map(|c| corpus.corpus_char(*c))
             .collect();
 
         if matrix.len() == kb_size + kb.combos.len() {
@@ -220,7 +224,7 @@ impl MetricContext {
 
     pub fn new(l: &LayoutData, md: MetricData, corpus: Corpus) -> Option<Self> {
         let layout = MetricContext::layout_matrix(l, &md.keyboard, &corpus)?;
-        let metric_data = kc::MetricData::from(
+        let metric_data = KcMetricData::from(
             md.metrics.iter().map(|m| m.ngram_type).collect(),
             md.strokes,
             layout.matrix.len(),
@@ -275,5 +279,35 @@ impl<T> IndexMut<Finger> for FingerMap<T> {
             Finger::RR => &mut self.map[8],
             Finger::RP => &mut self.map[9],
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    #[test]
+    fn format_layout_columns() {
+        let semimak: LayoutData =
+            serde_json::from_str(&fs::read_to_string("sample.json").unwrap()).unwrap();
+
+        let mut corpus = {
+            let mut char_list = "abcdefghijklmnopqrstuvwxyz"
+                .chars()
+                .map(|c| vec![c, c.to_uppercase().next().unwrap()])
+                .collect::<Vec<Vec<char>>>();
+            char_list.extend(vec![
+                vec![',', '<'],
+                vec!['.', '>'],
+                vec!['/', '?'],
+                vec!['\'', '\"'],
+                vec![';', ':'],
+            ]);
+            Corpus::with_char_list(char_list)
+        };
+
+        let md: MetricData =
+            serde_json::from_str(&fs::read_to_string("ansi.json").unwrap()).unwrap();
+        let mut mc = MetricContext::new(&semimak, md, corpus).unwrap();
     }
 }
