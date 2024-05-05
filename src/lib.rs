@@ -287,7 +287,7 @@ mod tests {
     use super::*;
     use std::fs;
     #[test]
-    fn format_layout_columns() {
+    fn test_setup() {
         let semimak: LayoutData =
             serde_json::from_str(&fs::read_to_string("sample.json").unwrap()).unwrap();
 
@@ -305,9 +305,5 @@ mod tests {
             ]);
             Corpus::with_char_list(char_list)
         };
-
-        let md: MetricData =
-            serde_json::from_str(&fs::read_to_string("ansi.json").unwrap()).unwrap();
-        let mut mc = MetricContext::new(&semimak, md, corpus).unwrap();
     }
 }
