@@ -259,7 +259,7 @@ impl MetricContext {
                         }
                         continue;
                     }
-                    for finger in &comp.finger {
+                    'finger_searching: for finger in &comp.finger {
                         let l_len = mapped_layout[*finger].len();
                         let k_len = kb.keys[*finger].len();
 
@@ -272,7 +272,7 @@ impl MetricContext {
                                 && combo.coords.iter().any(|c| c.finger == *finger)
                             {
                                 mapped_combos[i] = comp.keys[0];
-                                break;
+                                break 'finger_searching;
                             }
                         }
                     }
