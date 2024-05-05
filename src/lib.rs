@@ -321,36 +321,13 @@ impl<T> Index<Finger> for FingerMap<T> {
     type Output = T;
 
     fn index(&self, finger: Finger) -> &Self::Output {
-        match finger {
-            Finger::LP => &self.map[0],
-            Finger::LR => &self.map[1],
-            Finger::LM => &self.map[2],
-            Finger::LI => &self.map[3],
-            Finger::LT => &self.map[4],
-            Finger::RT => &self.map[5],
-            Finger::RI => &self.map[6],
-            Finger::RM => &self.map[7],
-            Finger::RR => &self.map[8],
-            Finger::RP => &self.map[9],
-        }
+        &self.map[finger.as_usize()]
     }
 }
 
-// TODO: dry
 impl<T> IndexMut<Finger> for FingerMap<T> {
     fn index_mut(&mut self, finger: Finger) -> &mut Self::Output {
-        match finger {
-            Finger::LP => &mut self.map[0],
-            Finger::LR => &mut self.map[1],
-            Finger::LM => &mut self.map[2],
-            Finger::LI => &mut self.map[3],
-            Finger::LT => &mut self.map[4],
-            Finger::RT => &mut self.map[5],
-            Finger::RI => &mut self.map[6],
-            Finger::RM => &mut self.map[7],
-            Finger::RR => &mut self.map[8],
-            Finger::RP => &mut self.map[9],
-        }
+        &mut self.map[finger.as_usize()]
     }
 }
 
