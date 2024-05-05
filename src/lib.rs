@@ -149,7 +149,7 @@ impl LayoutData {
             components.push(LayoutComponent::Key(KeyComponent {
                 finger: combo.coords.iter().map(|coord| coord.finger).collect(),
                 layer: kc.pos.layer,
-                keys: vec![corpus.uncorpus_unigram(layout.matrix[i])]
+                keys: vec![corpus.uncorpus_unigram(layout.matrix[i])],
             }));
             i += 1;
         }
@@ -411,17 +411,15 @@ mod tests {
             );
         }
         let new_data = context.layout_data();
-        for (LayoutComponent::Key(original), LayoutComponent::Key(new)) in semimak
-            .components
-            .iter()
-            .zip(new_data.components.iter())
+        for (LayoutComponent::Key(original), LayoutComponent::Key(new)) in
+            semimak.components.iter().zip(new_data.components.iter())
         {
-	    for (i, key) in new.keys.iter().enumerate() {
-		if i >= original.keys.len() {
-		    continue
-		}
-		assert_eq!(*key, original.keys[i]);
-	    }
-	}
+            for (i, key) in new.keys.iter().enumerate() {
+                if i >= original.keys.len() {
+                    continue;
+                }
+                assert_eq!(*key, original.keys[i]);
+            }
+        }
     }
 }
