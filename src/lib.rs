@@ -150,6 +150,7 @@ impl LayoutData {
         for combo in &kb.combos {
             let kc = &combo.coords[0];
             let key = corpus.uncorpus_unigram(layout.matrix[i]);
+            i += 1;
             if key == '\0' {
                 continue;
             }
@@ -158,7 +159,6 @@ impl LayoutData {
                 layer: kc.pos.layer,
                 keys: vec![key],
             }));
-            i += 1;
         }
         LayoutData {
             name: "".to_string(),
