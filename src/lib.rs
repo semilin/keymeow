@@ -126,6 +126,45 @@ pub struct LayoutData {
     pub components: Vec<LayoutComponent>,
 }
 
+impl LayoutData {
+    pub fn from_keyboard_layout(kb: &Keyboard, layout: &Layout, corpus: &Corpus) -> Self {
+        let mut components: Vec<LayoutComponent> = vec![];
+        let mut i = 0;
+        for finger in &kb.keys.map {
+            let mut chars: Vec<char> = vec![];
+            for _ in finger {
+                chars.push(corpus.uncorpus_unigram(layout.matrix[i]));
+                i += 1;
+            }
+            if chars.len() > 0 {
+                components.push(LayoutComponent::Key(KeyComponent {
+                    finger: vec![finger[0].finger],
+                    layer: finger[0].pos.layer,
+                    keys: chars,
+                }));
+            }
+        }
+        LayoutData {
+            name: "".to_string(),
+            authors: vec![],
+            note: None,
+            components,
+        }
+    }
+    pub fn name(self, name: String) -> Self {
+        Self { name, ..self }
+    }
+    pub fn authors(self, authors: Vec<String>) -> Self {
+        Self { authors, ..self }
+    }
+    pub fn note(self, note: String) -> Self {
+        Self {
+            note: Some(note),
+            ..self
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct Keyboard {
     pub keys: FingerMap<Vec<KeyCoord>>,
