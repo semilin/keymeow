@@ -26,7 +26,7 @@
 	{ "finger": ["RI"],
 	  "type": "single",
 	  "layer": 0,
-	  "keys": ["w", "d", "g", "'", "c", "p"]
+	  "keys": ["'", "c", "p", "w", "d", "g"]
 	},
 	{ "finger": ["RM"],
 	  "type": "single",
