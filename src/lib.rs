@@ -25,6 +25,35 @@ pub enum Finger {
     RP,
 }
 
+impl Finger {
+    const LIST: [Self; 10] = [
+        Finger::LP,
+        Finger::LR,
+        Finger::LM,
+        Finger::LI,
+        Finger::LT,
+        Finger::RT,
+        Finger::RI,
+        Finger::RM,
+        Finger::RR,
+        Finger::RP,
+    ];
+    pub fn as_usize(self) -> usize {
+        match self {
+            Finger::LP => 0,
+            Finger::LR => 1,
+            Finger::LM => 2,
+            Finger::LI => 3,
+            Finger::LT => 4,
+            Finger::RT => 5,
+            Finger::RI => 6,
+            Finger::RM => 7,
+            Finger::RR => 8,
+            Finger::RP => 9,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub enum FingerKind {
     Pinky,
