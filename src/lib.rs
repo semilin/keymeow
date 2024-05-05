@@ -133,7 +133,10 @@ impl LayoutData {
         for finger in &kb.keys.map {
             let mut chars: Vec<char> = vec![];
             for _ in finger {
-                chars.push(corpus.uncorpus_unigram(layout.matrix[i]));
+                let key = corpus.uncorpus_unigram(layout.matrix[i]);
+                if key != '\0' {
+                    chars.push(key);
+                }
                 i += 1;
             }
             if !chars.is_empty() {
@@ -146,10 +149,14 @@ impl LayoutData {
         }
         for combo in &kb.combos {
             let kc = &combo.coords[0];
+            let key = corpus.uncorpus_unigram(layout.matrix[i]);
+            if key == '\0' {
+                continue;
+            }
             components.push(LayoutComponent::Key(KeyComponent {
                 finger: combo.coords.iter().map(|coord| coord.finger).collect(),
                 layer: kc.pos.layer,
-                keys: vec![corpus.uncorpus_unigram(layout.matrix[i])],
+                keys: vec![key],
             }));
             i += 1;
         }
