@@ -290,6 +290,10 @@ impl MetricContext {
         Some(())
     }
 
+    pub fn layout_data(&self) -> LayoutData {
+        LayoutData::from_keyboard_layout(&self.keyboard, &self.layout, &self.analyzer.corpus)
+    }
+
     pub fn new(l: &LayoutData, md: MetricData, corpus: Corpus) -> Option<Self> {
         let layout = MetricContext::layout_matrix(l, &md.keyboard, &corpus)?;
         let metric_data = KcMetricData::from(
