@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 kc = { package = "keycat", git = "https://github.com/semilin/keycat", features = ["serde"] }
-rand = "0.8.5"
 serde = { version = "1.0.164", features = ["derive"] }
+[dev-dependencies]
 serde_json = "1.0.97"
