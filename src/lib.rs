@@ -136,13 +136,22 @@ impl LayoutData {
                 chars.push(corpus.uncorpus_unigram(layout.matrix[i]));
                 i += 1;
             }
-            if chars.len() > 0 {
+            if !chars.is_empty() {
                 components.push(LayoutComponent::Key(KeyComponent {
                     finger: vec![finger[0].finger],
                     layer: finger[0].pos.layer,
                     keys: chars,
                 }));
             }
+        }
+        for combo in &kb.combos {
+            let kc = &combo.coords[0];
+            components.push(LayoutComponent::Key(KeyComponent {
+                finger: combo.coords.iter().map(|coord| coord.finger).collect(),
+                layer: kc.pos.layer,
+                keys: vec![corpus.uncorpus_unigram(layout.matrix[i])]
+            }));
+            i += 1;
         }
         LayoutData {
             name: "".to_string(),
