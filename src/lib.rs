@@ -335,12 +335,36 @@ impl<T> IndexMut<Finger> for FingerMap<T> {
 mod tests {
     use super::*;
     use std::fs;
+
+    fn matrix() -> Keyboard {
+        let mut map: [Vec<KeyCoord>; 10] = Default::default();
+        for col in 0u8..10 {
+            for row in 0u8..3 {
+                let finger = match col {
+                    4 => Finger::LI,
+                    5 => Finger::RI,
+                    _ => Finger::LIST[col as usize],
+                };
+                map[finger.as_usize()].push(KeyCoord {
+                    pos: Pos { col, row, layer: 0 },
+                    x: col.into(),
+                    y: row.into(),
+                    finger,
+                });
+            }
+        }
+        Keyboard {
+            keys: FingerMap { map },
+            combos: vec![],
+            combo_indexes: Default::default(),
+        }
+    }
     #[test]
     fn test_setup() {
         let semimak: LayoutData =
             serde_json::from_str(&fs::read_to_string("sample.json").unwrap()).unwrap();
 
-        let mut corpus = {
+        let corpus = {
             let mut char_list = "abcdefghijklmnopqrstuvwxyz"
                 .chars()
                 .map(|c| vec![c, c.to_uppercase().next().unwrap()])
@@ -354,5 +378,41 @@ mod tests {
             ]);
             Corpus::with_char_list(char_list)
         };
+
+        let keyboard = matrix();
+        let data = MetricData {
+            strokes: vec![],
+            metrics: vec![],
+            keyboard,
+        };
+
+        let context = MetricContext::new(&semimak, data, corpus).unwrap();
+        for (a, b) in context
+            .layout
+            .matrix
+            .iter()
+            .map(|c| context.analyzer.corpus.uncorpus_unigram(*c))
+            .zip("fsxlrjhnbvtmzkq'cpwdgue,oa.yi/".chars())
+        {
+            assert_eq!(
+                a,
+                b,
+                "{}",
+                format!("layout matrix {:?} is wrong", context.layout.matrix)
+            );
+        }
+        let new_data = context.layout_data();
+        for (LayoutComponent::Key(original), LayoutComponent::Key(new)) in semimak
+            .components
+            .iter()
+            .zip(new_data.components.iter())
+        {
+	    for (i, key) in new.keys.iter().enumerate() {
+		if i >= original.keys.len() {
+		    continue
+		}
+		assert_eq!(*key, original.keys[i]);
+	    }
+	}
     }
 }
