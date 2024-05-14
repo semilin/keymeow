@@ -26,6 +26,7 @@ pub enum Finger {
 }
 
 impl Finger {
+    #[allow(dead_code)]
     const LIST: [Self; 10] = [
         Finger::LP,
         Finger::LR,
@@ -396,6 +397,7 @@ mod tests {
         };
 
         let keyboard = matrix();
+
         let data = MetricData {
             strokes: vec![],
             metrics: vec![],
