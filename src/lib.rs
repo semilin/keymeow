@@ -104,8 +104,9 @@ pub struct Combo {
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(untagged)]
-pub enum LayoutComponent {
-    Key(KeyComponent),
+pub enum LayoutFormat {
+    Fixed(Vec<Option<char>>),
+    Flexible(Vec<KeyComponent>),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -124,48 +125,49 @@ pub struct LayoutData {
     pub name: String,
     pub authors: Vec<String>,
     pub note: Option<String>,
-    pub components: Vec<LayoutComponent>,
+    #[serde(alias = "components")]
+    pub format: LayoutFormat,
 }
 
 impl LayoutData {
     pub fn from_keyboard_layout(kb: &Keyboard, layout: &Layout, corpus: &Corpus) -> Self {
-        let mut components: Vec<LayoutComponent> = vec![];
+        let mut components: Vec<KeyComponent> = vec![];
         let mut i = 0;
         for finger in &kb.keys.map {
             let mut chars: Vec<char> = vec![];
             for _ in finger {
-                let key = corpus.uncorpus_unigram(layout.matrix[i]);
+                let key = corpus.uncorpus_unigram(layout.0[i]);
                 if key != '\0' {
                     chars.push(key);
                 }
                 i += 1;
             }
             if !chars.is_empty() {
-                components.push(LayoutComponent::Key(KeyComponent {
+                components.push(KeyComponent {
                     finger: vec![finger[0].finger],
                     layer: finger[0].pos.layer,
                     keys: chars,
-                }));
+                });
             }
         }
         for combo in &kb.combos {
             let kc = &combo.coords[0];
-            let key = corpus.uncorpus_unigram(layout.matrix[i]);
+            let key = corpus.uncorpus_unigram(layout.0[i]);
             i += 1;
             if key == '\0' {
                 continue;
             }
-            components.push(LayoutComponent::Key(KeyComponent {
+            components.push(KeyComponent {
                 finger: combo.coords.iter().map(|coord| coord.finger).collect(),
                 layer: kc.pos.layer,
                 keys: vec![key],
-            }));
+            });
         }
         LayoutData {
             name: "".to_string(),
             authors: vec![],
             note: None,
-            components,
+            format: LayoutFormat::Flexible(components),
         }
     }
     pub fn name(self, name: String) -> Self {
@@ -237,11 +239,28 @@ pub struct MetricContext {
 
 impl MetricContext {
     pub fn layout_matrix(l: &LayoutData, kb: &Keyboard, corpus: &Corpus) -> Option<kc::Layout> {
-        let mut mapped_layout: FingerMap<Vec<char>> = FingerMap::default();
-        let mut mapped_combos: Vec<char> = vec!['\0'; kb.combos.len()];
-        for component in &l.components {
-            match component {
-                LayoutComponent::Key(comp) => {
+        let kb_size = kb.keys.map.iter().flatten().count();
+        match &l.format {
+            LayoutFormat::Fixed(layout) => {
+                if layout.len() <= kb_size {
+                    Some(kc::Layout(
+                        layout
+                            .iter()
+                            .take(kb_size)
+                            .map(|c| match c {
+                                Some(c) => corpus.corpus_char(*c),
+                                None => 0,
+                            })
+                            .collect(),
+                    ))
+                } else {
+                    None
+                }
+            }
+            LayoutFormat::Flexible(layout) => {
+                let mut mapped_layout: FingerMap<Vec<char>> = FingerMap::default();
+                let mut mapped_combos: Vec<char> = vec!['\0'; kb.combos.len()];
+                for comp in layout {
                     if comp.finger.len() == 1 {
                         let finger = comp.finger[0];
                         for (i, c) in comp.keys.iter().enumerate() {
@@ -278,27 +297,27 @@ impl MetricContext {
                         }
                     }
                 }
+
+                for (mapped_finger, kb_finger) in
+                    mapped_layout.map.iter_mut().zip(kb.keys.map.iter())
+                {
+                    mapped_finger.extend(vec!['\0'; kb_finger.len() - mapped_finger.len()]);
+                }
+
+                let matrix: Vec<CorpusChar> = mapped_layout
+                    .map
+                    .iter()
+                    .flatten()
+                    .chain(mapped_combos.iter())
+                    .map(|c| corpus.corpus_char(*c))
+                    .collect();
+
+                if matrix.len() == kb_size + kb.combos.len() {
+                    Some(kc::Layout(matrix))
+                } else {
+                    None
+                }
             }
-        }
-
-        for (mapped_finger, kb_finger) in mapped_layout.map.iter_mut().zip(kb.keys.map.iter()) {
-            mapped_finger.extend(vec!['\0'; kb_finger.len() - mapped_finger.len()]);
-        }
-
-        let kb_size = kb.keys.map.iter().flatten().count();
-
-        let matrix: Vec<CorpusChar> = mapped_layout
-            .map
-            .iter()
-            .flatten()
-            .chain(mapped_combos.iter())
-            .map(|c| corpus.corpus_char(*c))
-            .collect();
-
-        if matrix.len() == kb_size + kb.combos.len() {
-            Some(kc::Layout { matrix })
-        } else {
-            None
         }
     }
 
@@ -316,7 +335,7 @@ impl MetricContext {
         let metric_data = KcMetricData::from(
             md.metrics.iter().map(|m| m.ngram_type).collect(),
             md.strokes,
-            layout.matrix.len(),
+            layout.0.len(),
         );
         let analyzer = Analyzer::from(metric_data, corpus);
 
@@ -376,28 +395,29 @@ mod tests {
             combo_indexes: Default::default(),
         }
     }
-    #[test]
-    fn test_setup() {
-        let semimak: LayoutData =
-            serde_json::from_str(&fs::read_to_string("sample.json").unwrap()).unwrap();
 
-        let corpus = {
-            let mut char_list = "abcdefghijklmnopqrstuvwxyz"
-                .chars()
-                .map(|c| vec![c, c.to_uppercase().next().unwrap()])
-                .collect::<Vec<Vec<char>>>();
-            char_list.extend(vec![
-                vec![',', '<'],
-                vec!['.', '>'],
-                vec!['/', '?'],
-                vec!['\'', '\"'],
-                vec![';', ':'],
-            ]);
-            Corpus::with_char_list(char_list)
-        };
+    fn corpus() -> Corpus {
+        let mut char_list = "abcdefghijklmnopqrstuvwxyz"
+            .chars()
+            .map(|c| vec![c, c.to_uppercase().next().unwrap()])
+            .collect::<Vec<Vec<char>>>();
+        char_list.extend(vec![
+            vec![',', '<'],
+            vec!['.', '>'],
+            vec!['/', '?'],
+            vec!['\'', '\"'],
+            vec![';', ':'],
+        ]);
+        Corpus::with_char_list(char_list)
+    }
+    #[test]
+    fn test_flexible() {
+        let semimak: LayoutData =
+            serde_json::from_str(&fs::read_to_string("test_data/flexible.json").unwrap()).unwrap();
+
+        let corpus = corpus();
 
         let keyboard = matrix();
-
         let data = MetricData {
             strokes: vec![],
             metrics: vec![],
@@ -407,7 +427,7 @@ mod tests {
         let context = MetricContext::new(&semimak, data, corpus).unwrap();
         for (a, b) in context
             .layout
-            .matrix
+            .0
             .iter()
             .map(|c| context.analyzer.corpus.uncorpus_unigram(*c))
             .zip("fsxlrjhnbvtmzkq'cpwdgue,oa.yi/".chars())
@@ -416,19 +436,53 @@ mod tests {
                 a,
                 b,
                 "{}",
-                format!("layout matrix {:?} is wrong", context.layout.matrix)
+                format!("layout matrix {:?} is wrong", context.layout.0)
             );
         }
         let new_data = context.layout_data();
-        for (LayoutComponent::Key(original), LayoutComponent::Key(new)) in
-            semimak.components.iter().zip(new_data.components.iter())
-        {
+        let LayoutFormat::Flexible(old_components) = semimak.format else {
+            unreachable!()
+        };
+        let LayoutFormat::Flexible(new_components) = new_data.format else {
+            unreachable!()
+        };
+        for (original, new) in old_components.iter().zip(new_components.iter()) {
             for (i, key) in new.keys.iter().enumerate() {
                 if i >= original.keys.len() {
                     continue;
                 }
                 assert_eq!(*key, original.keys[i]);
             }
+        }
+    }
+    #[test]
+    fn test_fixed() {
+        let semimak: LayoutData =
+            serde_json::from_str(&fs::read_to_string("test_data/fixed.json").unwrap()).unwrap();
+
+        let corpus = corpus();
+
+        let keyboard = matrix();
+        let data = MetricData {
+            strokes: vec![],
+            metrics: vec![],
+            keyboard,
+        };
+
+        let context = MetricContext::new(&semimak, data, corpus).unwrap();
+        for (a, b) in context
+            .layout
+            .0
+            .iter()
+            .map(|c| context.analyzer.corpus.uncorpus_unigram(*c))
+            .zip("\0sxlrjhnbvtmzkq'cpwdgue,oa.yi/".chars())
+        {
+            assert_eq!(
+                a,
+                b,
+                "{}",
+                format!("layout matrix {:?} is wrong", context.layout.0)
+            )
         }
     }
 }
