@@ -130,7 +130,15 @@ pub struct LayoutData {
 }
 
 impl LayoutData {
-    pub fn from_keyboard_layout(kb: &Keyboard, layout: &Layout, corpus: &Corpus) -> Self {
+    pub fn from_format(format: LayoutFormat) -> Self {
+        LayoutData {
+            name: "".to_string(),
+            authors: vec![],
+            note: None,
+            format,
+        }
+    }
+    pub fn flexible_from_keyboard_layout(kb: &Keyboard, layout: &Layout, corpus: &Corpus) -> Self {
         let mut components: Vec<KeyComponent> = vec![];
         let mut i = 0;
         for finger in &kb.keys.map {
@@ -163,12 +171,19 @@ impl LayoutData {
                 keys: vec![key],
             });
         }
-        LayoutData {
-            name: "".to_string(),
-            authors: vec![],
-            note: None,
-            format: LayoutFormat::Flexible(components),
-        }
+        Self::from_format(LayoutFormat::Flexible(components))
+    }
+    pub fn fixed_from_layout(layout: &Layout, corpus: &Corpus) -> Self {
+        Self::from_format(LayoutFormat::Fixed(
+            layout
+                .0
+                .iter()
+                .map(|c| match c {
+                    0 => None,
+                    _ => Some(corpus.uncorpus_unigram(*c)),
+                })
+                .collect(),
+        ))
     }
     pub fn name(self, name: String) -> Self {
         Self { name, ..self }
@@ -326,8 +341,16 @@ impl MetricContext {
         Some(())
     }
 
-    pub fn layout_data(&self) -> LayoutData {
-        LayoutData::from_keyboard_layout(&self.keyboard, &self.layout, &self.analyzer.corpus)
+    pub fn fixed_layout_data(&self) -> LayoutData {
+        LayoutData::fixed_from_layout(&self.layout, &self.analyzer.corpus)
+    }
+
+    pub fn flexible_layout_data(&self) -> LayoutData {
+        LayoutData::flexible_from_keyboard_layout(
+            &self.keyboard,
+            &self.layout,
+            &self.analyzer.corpus,
+        )
     }
 
     pub fn new(l: &LayoutData, md: MetricData, corpus: Corpus) -> Option<Self> {
@@ -439,7 +462,7 @@ mod tests {
                 format!("layout matrix {:?} is wrong", context.layout.0)
             );
         }
-        let new_data = context.layout_data();
+        let new_data = context.flexible_layout_data();
         let LayoutFormat::Flexible(old_components) = semimak.format else {
             unreachable!()
         };
