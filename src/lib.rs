@@ -254,7 +254,7 @@ pub struct MetricContext {
 
 impl MetricContext {
     pub fn layout_matrix(l: &LayoutData, kb: &Keyboard, corpus: &Corpus) -> Option<kc::Layout> {
-        let kb_size = kb.keys.map.iter().flatten().count();
+        let kb_size = kb.keys.map.iter().flatten().count() + kb.combos.len();
         match &l.format {
             LayoutFormat::Fixed(layout) => {
                 if layout.len() <= kb_size {
@@ -494,6 +494,7 @@ mod tests {
         };
 
         let context = MetricContext::new(&semimak, data, corpus).unwrap();
+        assert_eq!(context.layout.0.len(), 30);
         for (a, b) in context
             .layout
             .0
