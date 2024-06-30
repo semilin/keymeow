@@ -261,11 +261,12 @@ impl MetricContext {
                     Some(kc::Layout(
                         layout
                             .iter()
-                            .take(kb_size)
                             .map(|c| match c {
                                 Some(c) => corpus.corpus_char(*c),
                                 None => 0,
                             })
+                            .take(kb_size)
+                            .chain(std::iter::repeat(0).take(kb_size - layout.len()))
                             .collect(),
                     ))
                 } else {
